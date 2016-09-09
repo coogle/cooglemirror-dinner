@@ -22,21 +22,23 @@ class DinnerServiceProvider extends ServiceProvider {
 	{
 		$this->package('cooglemirror/dinner', 'cooglemirror-dinner');
 		
-		if(!\Schema::hasTable('dinner_menu')) {
-		    throw new \Exception("You must run migrations to use this plugin");
-		}
-		
-		DinnerMenu::where('updated_at', '<', Carbon::now()->startOfWeek())->delete();
-		$activeDays = DinnerMenu::lists('day');
-		
-        foreach(['mon', 'tues', 'weds', 'thurs', 'fri', 'sat', 'sun'] as $dayOfWeek) {
-            if(!in_array($dayOfWeek, $activeDays)) {
-                $blankDay = new DinnerMenu();
-                $blankDay->day = $dayOfWeek;
-                $blankDay->menu = "?????";
-                $blankDay->save();
+		if(!\App::runningInConsole()) {
+    		if(!\Schema::hasTable('dinner_menu')) {
+    		    throw new \Exception("You must run migrations to use this plugin");
+    		}
+    		
+    		DinnerMenu::where('updated_at', '<', Carbon::now()->startOfWeek())->delete();
+    		$activeDays = DinnerMenu::lists('day');
+    		
+            foreach(['mon', 'tues', 'weds', 'thurs', 'fri', 'sat', 'sun'] as $dayOfWeek) {
+                if(!in_array($dayOfWeek, $activeDays)) {
+                    $blankDay = new DinnerMenu();
+                    $blankDay->day = $dayOfWeek;
+                    $blankDay->menu = "?????";
+                    $blankDay->save();
+                }
             }
-        }
+		}
         
 		\Event::listen('cooglemirror.render', function($layoutView) {
 		    \View::composer('cooglemirror-dinner::widget', '\Cooglemirror\Dinner\Widget');
