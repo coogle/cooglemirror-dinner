@@ -40,12 +40,26 @@ class DinnerServiceProvider extends ServiceProvider {
             }
 		}
         
-		\Event::listen('cooglemirror.render', function($layoutView) {
+		\Event::listen(\Cooglemirror\Events::RENDER, function($layoutView) {
 		    \View::composer('cooglemirror-dinner::widget', '\Cooglemirror\Dinner\Widget');
 		    
 		    $view = \View::make('cooglemirror-dinner::widget')->render();
 		    $layoutView->with(\Config::get('cooglemirror-dinner::widget.placement'), $view);
 		});
+		
+	    \Event::listen(\Cooglemirror\Events::PROCESS_CRON, function(\CronRunCommand $cronCmd) {
+	    
+	        $this->sundays(function() {
+	           DinnerMenu::all()->delete();
+	           foreach(['mon', 'tues', 'weds', 'thurs', 'fri', 'sat', 'sun'] as $dayOfWeek) {
+	               $blankDay = new DinnerMenu();
+	               $blankDay->day = $dayOfWeek;
+	               $blankDay->menu = "?????";
+	               $blankDay->save();
+	           }
+	        });
+	    
+	    });
 		
 		\Route::get('dinner', [
             'as' => 'cooglemirror-dinner.dinner',
